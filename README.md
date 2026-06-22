@@ -51,3 +51,35 @@
                         quantity DECIMAL(10, 3) NOT NULL,
                         UNIQUE (product_id, material_id)
                     );
+ИМПОРТ JSON
+
+                     INSERT INTO partners (id, name, inn, address, phone, salesman, buyer) VALUES
+                    ('000000001', N'ООО "Поставка"', NULL, N'г.Пятигорск', N'+79198634592', 1, 1),
+                    ('000000002', N'ООО "Кинотеатр Квант"', N'26320045123', N'г. Железноводск, ул. Мира, 123', N'+79884581555', 1, 0),
+                    ('000000008', N'ООО "Новый JDTO"', N'26320045111', N'г. Железноводсу', N'+79884581555', 1, 0),
+                    ('000000003', N'ООО "Ромашка"', N'4140784214', N'г. Омск, ул. Строителей, 294', N'+79882584546', 0, 1),
+                    ('000000009', N'ООО "Ипподром"', N'5874045632', N'г. Уфа, ул. Набережная,  37', N'+79627486389', 1, 1),
+                    ('000000010', N'ООО "Ассоль"', N'2629011278', N'г. Калуга, ул. Пушкина, 94', N'+79184572398', 0, 1);
+
+РАССЧЕТ ЗАКАЗА 
+
+                    USE DADAP;
+                    GO
+                    
+                    -- Для всех заказов:
+                    WITH product_material_cost AS (
+                        SELECT 
+                            s.product_id,
+                            SUM(s.quantity * m.price) AS material_cost_per_unit
+                        FROM specifications s
+                        JOIN items m ON s.material_id = m.id
+                        GROUP BY s.product_id
+                    )
+                    SELECT 
+                        o.order_number,
+                        SUM(o.quantity * pmc.material_cost_per_unit) AS total_material_cost,
+                        SUM(o.amount) AS sales_amount  -- дополнительно продажная сумма (если есть поле amount)
+                    FROM orders o
+                    LEFT JOIN product_material_cost pmc ON o.item_id = pmc.product_id
+                    GROUP BY o.order_number
+                    ORDER BY o.order_number;
